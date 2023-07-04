@@ -6,15 +6,66 @@
 #include<allegro5/file.h>
 
 #define ANCHO 1600
-#define ALTO 900
+#define ALTO 800
 #define ANCHOPERSONAJE 50
 #define ALTOPERSONAJE 58
-#define VELOCIDAD_PERSONAJE 3
 #define x_pixel 41
-#define y_pixel 31
+#define y_pixel 20
 
-int x_personaje = ANCHO / 2 - ANCHOPERSONAJE / 2;
-int y_personaje = ALTO / 2 - ALTOPERSONAJE / 2;
+struct _personaje
+{
+	int x;
+	int y;
+	float vel;
+	int madera_cant;
+	int roca_cant;
+};
+typedef struct _personaje personaje;
+personaje obrero = { ANCHO / 2 - ANCHOPERSONAJE / 2, ALTO / 2 - ALTOPERSONAJE / 2, 4.5 };
+
+/*
+struct _arbol
+{
+	int cantidad = 10;
+};
+typedef struct _arbol arbol;
+
+struct _roca
+{
+	int cantidad = 10;
+};
+typedef struct _roca roca;
+
+struct _muro
+{
+
+};
+typedef struct _muro muro;
+
+struct _cesped
+{
+
+};
+typedef struct _cesped cesped;
+
+struct _cesped2
+{
+
+};
+typedef struct _cesped2 cesped2;
+
+struct _camino
+{
+
+};
+typedef struct _camino camino;
+
+struct _camino2
+{
+
+};
+typedef struct _camino2 camino2;
+*/
 
 int tecla_up = false;
 int tecla_down = false;
@@ -22,6 +73,8 @@ int tecla_left = false;
 int tecla_right = false;
 
 bool ejecutandose = true;
+
+//Función encargada del teclado cuando se presiona una tecla.
 
 void proceso_teclado_input(ALLEGRO_EVENT juego)
 {
@@ -40,6 +93,8 @@ void proceso_teclado_input(ALLEGRO_EVENT juego)
 	}
 }
 
+//Función encargada de teclado cuando se deja de pulsar una tecla.
+
 void proceso_teclado_output(ALLEGRO_EVENT juego)
 {
 	switch (juego.keyboard.keycode)
@@ -55,42 +110,50 @@ void proceso_teclado_output(ALLEGRO_EVENT juego)
 	}
 }
 
+//Función encargada de la colisión.
+
 void colision()
 {
-	if (tecla_up && y_personaje > 0)
+	if (tecla_up && obrero.y > 0)
 	{
-		y_personaje -= VELOCIDAD_PERSONAJE;
+		obrero.y -= obrero.vel;
 	}
-	if (tecla_down && y_personaje + ALTOPERSONAJE < ALTO)
+	if (tecla_down && obrero.y + ALTOPERSONAJE < ALTO)
 	{
-		y_personaje += VELOCIDAD_PERSONAJE;
+		obrero.y += obrero.vel;
 	}
-	if (tecla_left && x_personaje > 0)
+	if (tecla_left && obrero.x > 0)
 	{
-		x_personaje -= VELOCIDAD_PERSONAJE;
+		obrero.x -= obrero.vel;
 	}
-	if (tecla_right && x_personaje + ANCHOPERSONAJE < ANCHO)
+	if (tecla_right && obrero.x + ANCHOPERSONAJE < ANCHO)
 	{
-		x_personaje += VELOCIDAD_PERSONAJE;
+		obrero.x += obrero.vel;
 	}
 }
 
 int main()
 {
+	//Inicializaciones.
+
 	ALLEGRO_DISPLAY* ventana = NULL;
 	ALLEGRO_EVENT_QUEUE* eventos = NULL;
 	ALLEGRO_TIMER* fps = NULL;
-	ALLEGRO_BITMAP* obrero = NULL;
+	ALLEGRO_BITMAP* obrero1 = NULL;
 	ALLEGRO_BITMAP* fondo = NULL;
 	ALLEGRO_BITMAP* muro = NULL;
 	ALLEGRO_BITMAP* camino = NULL;
+	ALLEGRO_BITMAP* camino2 = NULL;
 	ALLEGRO_BITMAP* cesped = NULL;
+	ALLEGRO_BITMAP* cesped2 = NULL;
 	ALLEGRO_BITMAP* arbol = NULL;
 	ALLEGRO_BITMAP* roca = NULL;
 	ALLEGRO_FILE* mapa = al_fopen("mapa.txt", "r");
 
 	int x_mapa, y_mapa;
 	char archivo[y_pixel][x_pixel];
+
+	//Fin inicializaciones.
 
 	//Errores posibles e inicializaciones.
 
@@ -134,46 +197,64 @@ int main()
 	}
 
 	al_init_image_addon();
-	obrero = al_load_bitmap("obrero.png");
-	if (!obrero)
+	obrero1 = al_load_bitmap("obrero.png");
+	if (!obrero1)
 	{
-		printf("Error al cargar obrero");
+		printf("Error al cargar el obrero 1");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
 		return -1;
 	}
-	fondo = al_load_bitmap("fondo.jpg");
+	fondo = al_load_bitmap("fondo.png");
 	if (!fondo)
 	{
-		printf("Error al cargar el fondo");
+		printf("Error al cargar el fondo del mapa");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
 		return -1;
 	}
-	muro = al_load_bitmap("muro.jpg");
+	muro = al_load_bitmap("muro.png");
 	if (!muro)
 	{
-		printf("Error al cargar el muro");
+		printf("Error al cargar un pixel de muro");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
 		return -1;
 	}
-	camino = al_load_bitmap("camino.jpg");
+	camino = al_load_bitmap("camino.png");
 	if (!camino)
 	{
-		printf("Error al cargar el camino");
+		printf("Error al cargar un pixel de camino");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
 		return -1;
 	}
-	cesped = al_load_bitmap("cesped.jpg");
+	camino2 = al_load_bitmap("camino2.png");
+	if (!camino)
+	{
+		printf("Error al cargar un pixel de camino2");
+		al_destroy_timer(fps);
+		al_destroy_event_queue(eventos);
+		al_destroy_display(ventana);
+		return -1;
+	}
+	cesped = al_load_bitmap("cesped.png");
 	if (!cesped)
 	{
-		printf("Error al cargar el cesped");
+		printf("Error al cargar un pixel de cesped");
+		al_destroy_timer(fps);
+		al_destroy_event_queue(eventos);
+		al_destroy_display(ventana);
+		return -1;
+	}
+	cesped2 = al_load_bitmap("cesped2.png");
+	if (!cesped2)
+	{
+		printf("Error al cargar un pixel de cesped2");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
@@ -182,7 +263,7 @@ int main()
 	arbol = al_load_bitmap("arbol.png");
 	if (!arbol)
 	{
-		printf("Error al cargar el arbol");
+		printf("Error al cargar un pixel de arbol");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
@@ -191,7 +272,7 @@ int main()
 	roca = al_load_bitmap("roca.png");
 	if (!roca)
 	{
-		printf("Error al cargar la roca");
+		printf("Error al cargar un pixel de roca");
 		al_destroy_timer(fps);
 		al_destroy_event_queue(eventos);
 		al_destroy_display(ventana);
@@ -234,19 +315,27 @@ int main()
 				{
 					if (archivo[y_mapa][x_mapa] == 'm')
 					{
-						al_draw_bitmap(muro, x_mapa * 20, y_mapa * 20, 0);
+						al_draw_bitmap(muro, x_mapa * 40, y_mapa * 40, 0);
 					}
 					else if (archivo[y_mapa][x_mapa] == 't')
 					{
-						al_draw_bitmap(camino, x_mapa * 20, y_mapa * 20, 0);
+						al_draw_bitmap(camino, x_mapa * 40, y_mapa * 40, 0);
+					}
+					else if (archivo[y_mapa][x_mapa] == 'k')
+					{
+						al_draw_bitmap(camino2, x_mapa * 40, y_mapa * 40, 0);
 					}
 					else if (archivo[y_mapa][x_mapa] == 'c')
 					{
-						al_draw_bitmap(cesped, x_mapa * 20, y_mapa * 20, 0);
+						al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+					}
+					else if (archivo[y_mapa][x_mapa] == 's')
+					{
+						al_draw_bitmap(cesped2, x_mapa * 40, y_mapa * 40, 0);
 					}
 					else if (archivo[y_mapa][x_mapa] == 'a')
 					{
-						al_draw_bitmap(arbol, x_mapa * 20, y_mapa * 20, 0);
+						al_draw_bitmap(arbol, x_mapa * 40, y_mapa * 40, 0);
 					}
 					else if (archivo[y_mapa][x_mapa] == 'r')
 					{
@@ -254,7 +343,7 @@ int main()
 					}
 				}
 			}
-			al_draw_bitmap(obrero, x_personaje, y_personaje, 0);
+			al_draw_bitmap(obrero1, obrero.x, obrero.y, 0);
 			al_flip_display();
 		}
 		else if (juego.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
@@ -276,7 +365,7 @@ int main()
 	//Liberación de memoria.
 
 	al_destroy_bitmap(fondo);
-	al_destroy_bitmap(obrero);
+	al_destroy_bitmap(obrero1);
 	al_destroy_bitmap(muro);
 	al_destroy_bitmap(camino);
 	al_destroy_bitmap(cesped);
