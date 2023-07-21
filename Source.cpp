@@ -17,6 +17,7 @@
 #define ALTOPERSONAJE 32
 #define x_arreglo 41
 #define y_arreglo 20
+#define tam_recurso 150
 //#define ESPACIORECURSO 150
 //Valores definidos.
 
@@ -76,6 +77,24 @@ struct _enemigo
 	float velocidad;
 };
 typedef struct _enemigo enemigo;
+struct _recurso
+{
+	int x;
+	int y;
+	int cantidad;
+};
+typedef struct _recurso recurso;
+/*
+struct _torre
+{
+	int x;
+	int y;
+	int tipo;
+	int daño;
+	int rango;
+};
+typedef struct _torre torre;
+*/
 //Estructuras.
 
 //Función para leer el mapa.
@@ -93,6 +112,36 @@ void lector_mapa(char archivo[y_arreglo][x_arreglo])
 	al_fclose(mapa);
 }
 //Función para leer el mapa.
+
+//Función para inicializar recursos.
+void inicializar_recursos(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso], recurso pedreria[tam_recurso])
+{
+	int y_mapa, x_mapa;
+	int contador_arboles = 0;
+	int contador_rocas = 0;
+
+	for (y_mapa = 0; y_mapa < y_arreglo; y_mapa++)
+	{
+		for (x_mapa = 0; x_mapa < x_arreglo; x_mapa++)
+		{
+			if (archivo[y_mapa][x_mapa] == 'a')
+			{
+				bosque[contador_arboles].y = y_mapa;
+				bosque[contador_arboles].x = x_mapa;
+				bosque[contador_arboles].cantidad = 30;
+				contador_arboles++;
+			}
+			if (archivo[y_mapa][x_mapa] == 'r')
+			{
+				pedreria[contador_rocas].y = y_mapa;
+				pedreria[contador_rocas].x = x_mapa;
+				pedreria[contador_rocas].cantidad = 20;
+				contador_rocas++;
+			}
+		}
+	}
+}
+//Función para inicializar recursos.
 
 //Función encargada de la colision con los bordes.
 void colision_bordes()
@@ -359,10 +408,27 @@ void construir_torre_canon(char archivo[y_arreglo][x_arreglo])
 }
 //Función para construir torre de cañon.
 
+//Función para buscar recursos.
+int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[tam_recurso])
+{
+	int posicion = 0;
+
+	for (posicion = 0; posicion <= tam_recurso; posicion++)
+	{
+		if (tipo_recurso[posicion].x == x_mapa && tipo_recurso[posicion].y == y_mapa)
+		{
+			return posicion;
+		}
+	}
+	return -1;
+}
+//Función para buscar recursos.
+
 //Recolector y contador piedra.
-void recolectar_piedra(char archivo[y_arreglo][x_arreglo])
+void recolectar_piedra(char archivo[y_arreglo][x_arreglo], recurso pedreria[tam_recurso])
 {
 	int x_mapa, y_mapa;
+	int indice;
 	time_t tiempo_actual;
 
 	x_mapa = obrero.x / 40;
@@ -372,41 +438,61 @@ void recolectar_piedra(char archivo[y_arreglo][x_arreglo])
 	{
 		if (archivo[y_mapa][x_mapa] == 'r')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, pedreria);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[y_mapa][x_mapa] = 'o';
-				contador_piedra = contador_piedra + 12;
+				contador_piedra = contador_piedra + 5;
+				pedreria[indice].cantidad -= 5;
+				if (pedreria[indice].cantidad <= 0)
+				{
+					archivo[y_mapa][x_mapa] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
-		if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
+		else if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, pedreria);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-				contador_piedra = contador_piedra + 12;
+				contador_piedra = contador_piedra + 5;
+				pedreria[indice].cantidad -= 5;
+				if (pedreria[indice].cantidad <= 0)
+				{
+					archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
 		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'r')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, pedreria);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
-				contador_piedra = contador_piedra + 12;
+				contador_piedra = contador_piedra + 5;
+				pedreria[indice].cantidad -= 5;
+				if (pedreria[indice].cantidad <= 0)
+				{
+					archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
 		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, pedreria);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-				contador_piedra = contador_piedra + 12;
+				contador_piedra = contador_piedra + 5;
+				pedreria[indice].cantidad -= 5;
+				if (pedreria[indice].cantidad <= 0)
+				{
+					archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
@@ -415,9 +501,10 @@ void recolectar_piedra(char archivo[y_arreglo][x_arreglo])
 //Recolector y contador piedra.
 
 //Recolector y contador madera.
-void recolectar_madera(char archivo[y_arreglo][x_arreglo])
+void recolectar_madera(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso])
 {
 	int x_mapa, y_mapa;
+	int indice;
 	time_t tiempo_actual;
 
 	x_mapa = obrero.x / 40;
@@ -427,41 +514,61 @@ void recolectar_madera(char archivo[y_arreglo][x_arreglo])
 	{
 		if (archivo[y_mapa][x_mapa] == 'a')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, bosque);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[y_mapa][x_mapa] = 'o';
-				contador_madera = contador_madera + 23;
+				contador_madera = contador_madera + 5;
+				bosque[indice].cantidad -= 5;
+				if (bosque[indice].cantidad <= 0)
+				{
+					archivo[y_mapa][x_mapa] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
 		else if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, bosque);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-				contador_madera = contador_madera + 23;
+				contador_madera = contador_madera + 5;
+				bosque[indice].cantidad -= 5;
+				if (bosque[indice].cantidad <= 0)
+				{
+					archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
 		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'a')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, bosque);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
-				contador_madera = contador_madera + 23;
+				contador_madera = contador_madera + 5;
+				bosque[indice].cantidad -= 5;
+				if (bosque[indice].cantidad <= 0)
+				{
+					archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
 		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
 		{
+			indice = buscar_recurso(x_mapa, y_mapa, bosque);
 			tiempo_actual = time(NULL);
-			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 2)
 			{
-				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-				contador_madera = contador_madera + 23;
+				contador_madera = contador_madera + 5;
+				bosque[indice].cantidad -= 5;
+				if (bosque[indice].cantidad <= 0)
+				{
+					archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				}
 				tiempo_ultima_recoleccion = tiempo_actual;
 			}
 		}
@@ -520,7 +627,12 @@ int main()
 {
 	//Declaración variables locacles función principal.
 	char archivo[y_arreglo][x_arreglo];
+
 	tiempo_ultima_recoleccion = time(NULL);
+
+	recurso bosque[tam_recurso];
+	recurso pedreria[tam_recurso];
+	recurso tipo_recurso[tam_recurso];
 	//Declaración variables locacles función principal.
 
 	//Errores e inicializaciones de ALLEGRO.
@@ -599,6 +711,10 @@ int main()
 	lector_mapa(archivo);
 	//Lector de mapa.
 
+	//Inicialización de recursos.
+	inicializar_recursos(archivo, bosque, pedreria);
+	//Inicialización de recursos.
+
 	//Ejecución del juego.
 	while (ejecutandose)
 	{
@@ -631,8 +747,8 @@ int main()
 			//Dibujo textos.
 
 			//Funciones de recolección.
-			recolectar_madera(archivo);
-			recolectar_piedra(archivo);
+			recolectar_madera(archivo, bosque);
+			recolectar_piedra(archivo, pedreria);
 			//Funciones de recolección.
 
 			//Actualización dibujos.
