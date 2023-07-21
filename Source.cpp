@@ -17,6 +17,7 @@
 #define ALTOPERSONAJE 32
 #define x_arreglo 41
 #define y_arreglo 20
+//#define ESPACIORECURSO 150
 //Valores definidos.
 
 //Inicializaciones de ALLEGRO.
@@ -36,6 +37,9 @@ ALLEGRO_BITMAP* arbol = NULL;
 ALLEGRO_BITMAP* roca = NULL;
 ALLEGRO_BITMAP* nucleo = NULL;
 ALLEGRO_BITMAP* nucleo_borde = NULL;
+ALLEGRO_BITMAP* torre_arqueros = NULL;
+ALLEGRO_BITMAP* torre_magos = NULL;
+ALLEGRO_BITMAP* torre_canon = NULL;
 ALLEGRO_FONT* fuente_posicion = NULL;
 ALLEGRO_FONT* fuente_piedra = NULL;
 ALLEGRO_FONT* fuente_madera = NULL;
@@ -50,6 +54,7 @@ int tecla_derecha = false;
 int contador_piedra = 0;
 int contador_madera = 0;
 bool ejecutandose = true;
+bool recolectando = false;
 time_t tiempo_ultima_recoleccion = 0;
 //Variables globales.
 
@@ -175,7 +180,7 @@ void colision_objetos(char archivo[y_arreglo][x_arreglo])
 //Colisión con objetos.
 
 //Función para dibujar objetos.
-void dibujar_objetos(char archivo[y_arreglo][x_arreglo], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde)
+void dibujar_objetos(char archivo[y_arreglo][x_arreglo], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde, ALLEGRO_BITMAP* torre_arqueros, ALLEGRO_BITMAP* torre_magos, ALLEGRO_BITMAP* torre_canon)
 {
 	int x_mapa, y_mapa;
 
@@ -226,6 +231,25 @@ void dibujar_objetos(char archivo[y_arreglo][x_arreglo], ALLEGRO_BITMAP* muro, A
 			else if (archivo[y_mapa][x_mapa] == 'o')
 			{
 				al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+			}
+			else if (archivo[y_mapa][x_mapa] == 'u')
+			{
+				al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+			}
+			else if (archivo[y_mapa][x_mapa] == 'h')
+			{
+				al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+				al_draw_bitmap(torre_arqueros, x_mapa * 40, y_mapa * 40, 0);
+			}
+			else if (archivo[y_mapa][x_mapa] == 'j')
+			{
+				al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+				al_draw_bitmap(torre_magos, x_mapa * 40, y_mapa * 40, 0);
+			}
+			else if (archivo[y_mapa][x_mapa] == 'g')
+			{
+				al_draw_bitmap(cesped, x_mapa * 40, y_mapa * 40, 0);
+				al_draw_bitmap(torre_canon, x_mapa * 40, y_mapa * 40, 0);
 			}
 		}
 	}
@@ -284,6 +308,57 @@ void dibujar_textos(ALLEGRO_FONT* fuente_posicion, ALLEGRO_FONT* fuente_piedra, 
 }
 //Función para dibujar textos.
 
+//Función para construir torre de arqueros.
+void construir_torre_arqueros(char archivo[y_arreglo][x_arreglo])
+{
+	int x_mapa, y_mapa;
+
+	x_mapa = obrero.x / 40;
+	y_mapa = obrero.y / 40;
+
+	if (archivo[y_mapa][x_mapa] == 'u' && contador_madera >= 30 && contador_piedra >= 5)
+	{
+		archivo[y_mapa][x_mapa] = 'h';
+		contador_madera -= 30;
+		contador_piedra -= 5;
+	}
+}
+//Función para construir torre de arqueros.
+
+//Función para construir torre de magos.
+void construir_torre_magos(char archivo[y_arreglo][x_arreglo])
+{
+	int x_mapa, y_mapa;
+
+	x_mapa = obrero.x / 40;
+	y_mapa = obrero.y / 40;
+
+	if (archivo[y_mapa][x_mapa] == 'u' && contador_madera >= 5 && contador_piedra >= 30)
+	{
+		archivo[y_mapa][x_mapa] = 'j';
+		contador_madera -= 5;
+		contador_piedra -= 30;
+	}
+}
+//Función para construir torre de magos.
+
+//Función para construir torre de cañon.
+void construir_torre_canon(char archivo[y_arreglo][x_arreglo])
+{
+	int x_mapa, y_mapa;
+
+	x_mapa = obrero.x / 40;
+	y_mapa = obrero.y / 40;
+
+	if (archivo[y_mapa][x_mapa] == 'u' && contador_madera >= 25 && contador_piedra >= 25)
+	{
+		archivo[y_mapa][x_mapa] = 'g';
+		contador_madera -= 25;
+		contador_piedra -= 25;
+	}
+}
+//Función para construir torre de cañon.
+
 //Recolector y contador piedra.
 void recolectar_piedra(char archivo[y_arreglo][x_arreglo])
 {
@@ -293,44 +368,47 @@ void recolectar_piedra(char archivo[y_arreglo][x_arreglo])
 	x_mapa = obrero.x / 40;
 	y_mapa = obrero.y / 40;
 
-	if (archivo[y_mapa][x_mapa] == 'r')
+	if (recolectando)
 	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		if (archivo[y_mapa][x_mapa] == 'r')
 		{
-			archivo[y_mapa][x_mapa] = 'o';
-			contador_piedra++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[y_mapa][x_mapa] = 'o';
+				contador_piedra = contador_piedra + 12;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
 		{
-			archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-			contador_piedra++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				contador_piedra = contador_piedra + 12;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'r')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'r')
 		{
-			archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
-			contador_piedra++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
+				contador_piedra = contador_piedra + 12;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'r')
 		{
-			archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-			contador_piedra++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				contador_piedra = contador_piedra + 12;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
 	}
 }
@@ -345,51 +423,54 @@ void recolectar_madera(char archivo[y_arreglo][x_arreglo])
 	x_mapa = obrero.x / 40;
 	y_mapa = obrero.y / 40;
 
-	if (archivo[y_mapa][x_mapa] == 'a')
+	if (recolectando)
 	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		if (archivo[y_mapa][x_mapa] == 'a')
 		{
-			archivo[y_mapa][x_mapa] = 'o';
-			contador_madera++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[y_mapa][x_mapa] = 'o';
+				contador_madera = contador_madera + 23;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	else if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		else if (archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
 		{
-			archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-			contador_madera++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[y_mapa][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				contador_madera = contador_madera + 23;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'a')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] == 'a')
 		{
-			archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
-			contador_madera++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][x_mapa] = 'o';
+				contador_madera = contador_madera + 23;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
-	}
-	else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
-	{
-		tiempo_actual = time(NULL);
-		if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+		else if (archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] == 'a')
 		{
-			archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
-			contador_madera++;
-			tiempo_ultima_recoleccion = tiempo_actual;
+			tiempo_actual = time(NULL);
+			if (tiempo_actual - tiempo_ultima_recoleccion >= 3)
+			{
+				archivo[(obrero.y + ALTOPERSONAJE - 1) / 40][(obrero.x + ANCHOPERSONAJE - 1) / 40] = 'o';
+				contador_madera = contador_madera + 23;
+				tiempo_ultima_recoleccion = tiempo_actual;
+			}
 		}
 	}
 }
 //Recolector y contador madera.
 
 //Función encargada del teclado cuando se presiona una tecla.
-void proceso_teclado_input(ALLEGRO_EVENT juego)
+void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[y_arreglo][x_arreglo])
 {
 	switch (juego.keyboard.keycode)
 	{
@@ -400,6 +481,14 @@ void proceso_teclado_input(ALLEGRO_EVENT juego)
 	case ALLEGRO_KEY_LEFT: tecla_izquierda = true;
 		break;
 	case ALLEGRO_KEY_RIGHT: tecla_derecha = true;
+		break;
+	case ALLEGRO_KEY_Q: recolectando = true;
+		break;
+	case ALLEGRO_KEY_W: construir_torre_arqueros(archivo);
+		break;
+	case ALLEGRO_KEY_E: construir_torre_magos(archivo);
+		break;
+	case ALLEGRO_KEY_R: construir_torre_canon(archivo);
 		break;
 	case ALLEGRO_KEY_ESCAPE: ejecutandose = false;
 		break;
@@ -419,6 +508,8 @@ void proceso_teclado_output(ALLEGRO_EVENT juego)
 	case ALLEGRO_KEY_LEFT: tecla_izquierda = false;
 		break;
 	case ALLEGRO_KEY_RIGHT: tecla_derecha = false;
+		break;
+	case ALLEGRO_KEY_Q: recolectando = false;
 		break;
 	}
 }
@@ -469,7 +560,10 @@ int main()
 	roca = al_load_bitmap("roca.png");
 	nucleo = al_load_bitmap("nucleo.png");
 	nucleo_borde = al_load_bitmap("nucleo_borde.png");
-	if (!obrero_derecha || !obrero_izquierda || !obrero_arriba || !obrero_abajo || !muro || !camino || !cespedycamino || !cespedycamino2 || !cesped || !arbol || !roca || !nucleo || !nucleo_borde)
+	torre_arqueros = al_load_bitmap("torre_arqueros.png");
+	torre_magos = al_load_bitmap("torre_magos.png");
+	torre_canon = al_load_bitmap("torre_canon.png");
+	if (!obrero_derecha || !obrero_izquierda || !obrero_arriba || !obrero_abajo || !muro || !camino || !cespedycamino || !cespedycamino2 || !cesped || !arbol || !roca || !nucleo || !nucleo_borde || !torre_arqueros || !torre_magos || !torre_canon)
 	{
 		printf("Error al cargar un dibujo de objeto dentro del mapa");
 		al_destroy_timer(temporizador);
@@ -525,7 +619,7 @@ int main()
 			//Limpieza de los dibujos.
 
 			//Dibujo objetos.
-			dibujar_objetos(archivo, muro, camino, cespedycamino, cespedycamino2, cesped, arbol, roca, nucleo, nucleo_borde);
+			dibujar_objetos(archivo, muro, camino, cespedycamino, cespedycamino2, cesped, arbol, roca, nucleo, nucleo_borde, torre_arqueros, torre_magos, torre_canon);
 			//Dibujo objetos.
 
 			//Dibujo obrero.
@@ -561,7 +655,7 @@ int main()
 		//Llamada función teclado_input.
 		else if (juego.type == ALLEGRO_EVENT_KEY_DOWN)
 		{
-			proceso_teclado_input(juego);
+			proceso_teclado_input(juego, archivo);
 		}
 		//Llamada función teclado_input.
 
@@ -588,6 +682,9 @@ int main()
 	al_destroy_bitmap(roca);
 	al_destroy_bitmap(nucleo);
 	al_destroy_bitmap(nucleo_borde);
+	al_destroy_bitmap(torre_arqueros);
+	al_destroy_bitmap(torre_magos);
+	al_destroy_bitmap(torre_canon);
 	al_destroy_timer(temporizador);
 	al_destroy_event_queue(eventos);
 	al_destroy_display(ventana);
