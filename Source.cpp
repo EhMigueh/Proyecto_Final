@@ -15,10 +15,11 @@
 #define ALTO 800
 #define ANCHOPERSONAJE 32
 #define ALTOPERSONAJE 32
-#define x_arreglo 41
-#define y_arreglo 20
-#define tam_recurso 150
-#define cant_enemigos 100
+#define X_ARREGLO 41
+#define Y_ARREGLO 20
+#define TAM_RECURSO 150
+#define CANT_ENEMIGOS 96
+#define MAX_TORRES 10
 //Valores definidos.
 
 //Inicializaciones de ALLEGRO.
@@ -39,7 +40,11 @@ ALLEGRO_BITMAP* roca = NULL;
 ALLEGRO_BITMAP* nucleo = NULL;
 ALLEGRO_BITMAP* nucleo_borde = NULL;
 ALLEGRO_BITMAP* torre_arqueros = NULL;
+ALLEGRO_BITMAP* torre_arqueros2 = NULL;
+ALLEGRO_BITMAP* torre_arqueros3 = NULL;
 ALLEGRO_BITMAP* torre_magos = NULL;
+ALLEGRO_BITMAP* torre_magos2 = NULL;
+ALLEGRO_BITMAP* torre_magos3 = NULL;
 ALLEGRO_BITMAP* goblin = NULL;
 ALLEGRO_FONT* fuente_posicion = NULL;
 ALLEGRO_FONT* fuente_piedra = NULL;
@@ -52,8 +57,8 @@ int tecla_arriba = false;
 int tecla_abajo = false;
 int tecla_izquierda = false;
 int tecla_derecha = false;
-int contador_piedra = 150;
-int contador_madera = 150;
+int contador_piedra = 300;
+int contador_madera = 300;
 bool ejecutandose = true;
 bool recolectando = false;
 time_t tiempo_ultima_recoleccion = 0;
@@ -91,27 +96,34 @@ struct _edificio
 	int y;
 	int municion;
 	int mejora;
+	int activado;
 };
 typedef struct _edificio edificio;
+struct _municion
+{
+	int x;
+	int y;
+};
+typedef struct _municion municion;
 //Estructuras.
 
 //Funciones.
-void lector_mapa(char archivo[y_arreglo][x_arreglo]);
-void inicializar_recursos(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso], recurso pedreria[tam_recurso]);
+void lector_mapa(char archivo[Y_ARREGLO][X_ARREGLO]);
+void inicializar_recursos(char archivo[Y_ARREGLO][X_ARREGLO], recurso bosque[TAM_RECURSO], recurso pedreria[TAM_RECURSO], int *contador_arboles, int *contador_rocas);
 void colision_bordes();
-void colision_objetos(char archivo[y_arreglo][x_arreglo]);
-void dibujar_objetos(char archivo[y_arreglo][x_arreglo], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde, ALLEGRO_BITMAP* torre_arqueros, ALLEGRO_BITMAP* torre_magos, ALLEGRO_BITMAP* goblin);
+void colision_objetos(char archivo[Y_ARREGLO][X_ARREGLO]);
+void dibujar_objetos(char archivo[Y_ARREGLO][X_ARREGLO], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde, ALLEGRO_BITMAP* torre_arqueros, ALLEGRO_BITMAP* torre_magos, ALLEGRO_BITMAP* goblin);
 void dibujar_obrero();
 void dibujar_textos(ALLEGRO_FONT* fuente_posicion, ALLEGRO_FONT* fuente_piedra, ALLEGRO_FONT* fuente_madera);
-void construir_torre_arqueros(char archivo[y_arreglo][x_arreglo]);
-void construir_torre_magos(char archivo[y_arreglo][x_arreglo]);
-int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[tam_recurso]);
-void recolectar_piedra(char archivo[y_arreglo][x_arreglo], recurso pedreria[tam_recurso]);
-void recolectar_madera(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso]);
-void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[y_arreglo][x_arreglo]);
+void construir_torre_arqueros(char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int *contador_torres);
+void construir_torre_magos(char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int* contador_torres);
+int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[TAM_RECURSO]);
+void recolectar_piedra(char archivo[Y_ARREGLO][X_ARREGLO], recurso pedreria[TAM_RECURSO]);
+void recolectar_madera(char archivo[Y_ARREGLO][X_ARREGLO], recurso bosque[TAM_RECURSO]);
+void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int *contador_torres);
 void proceso_teclado_output(ALLEGRO_EVENT juego);
-int inicializar_enemigos(char archivo[y_arreglo][x_arreglo], enemigo goblin1[cant_enemigos], int cantidad_enemigos_actuales);
-void dibujar_enemigos(char archivo[y_arreglo][x_arreglo], enemigo goblin1[cant_enemigos]);
+int inicializar_enemigos(char archivo[Y_ARREGLO][X_ARREGLO], enemigo goblin1[CANT_ENEMIGOS], int cantidad_enemigos_actuales);
+void dibujar_enemigos(char archivo[Y_ARREGLO][X_ARREGLO], enemigo goblin1[CANT_ENEMIGOS]);
 //Funciones.
 
 //Función principal.
@@ -119,13 +131,16 @@ int main()
 {
 	//Declaración variables locacles función principal.
 	int cantidad_enemigos_actuales = 0;
-	char archivo[y_arreglo][x_arreglo];
-	recurso bosque[tam_recurso];
-	recurso pedreria[tam_recurso];
-	enemigo goblin1[cant_enemigos];
+	char archivo[Y_ARREGLO][X_ARREGLO];
+	int contador_arboles = 0;
+	int contador_rocas = 0;
+	int contador_torres = 0;
+	recurso bosque[TAM_RECURSO];
+	recurso pedreria[TAM_RECURSO];
+	enemigo goblin1[CANT_ENEMIGOS];
+	edificio torres[MAX_TORRES];
 	int velocidad = 0;
 	int i;
-	int j;
 	//Declaración variables locacles función principal.
 
 	//Inicialización del timer.
@@ -171,9 +186,13 @@ int main()
 	nucleo = al_load_bitmap("nucleo.png");
 	nucleo_borde = al_load_bitmap("nucleo_borde.png");
 	torre_arqueros = al_load_bitmap("torre_arqueros.png");
+	torre_arqueros2 = al_load_bitmap("torre_arqueros2.png");
+	torre_arqueros3 = al_load_bitmap("torre_arqueros3.png");
 	torre_magos = al_load_bitmap("torre_magos.png");
+	torre_magos2 = al_load_bitmap("torre_magos2.png");
+	torre_magos3 = al_load_bitmap("torre_magos3.png");
 	goblin = al_load_bitmap("goblin.png");
-	if (!obrero_derecha || !obrero_izquierda || !obrero_arriba || !obrero_abajo || !muro || !camino || !cespedycamino || !cespedycamino2 || !cesped || !arbol || !roca || !nucleo || !nucleo_borde || !torre_arqueros || !torre_magos || !goblin)
+	if (!obrero_derecha || !obrero_izquierda || !obrero_arriba || !obrero_abajo || !muro || !camino || !cespedycamino || !cespedycamino2 || !cesped || !arbol || !roca || !nucleo || !nucleo_borde || !torre_arqueros || !torre_magos || !goblin || !torre_arqueros2 || !torre_arqueros3 || !torre_magos2 || !torre_magos3)
 	{
 		printf("Error al cargar un dibujo de objeto dentro del mapa");
 		al_destroy_timer(temporizador);
@@ -210,9 +229,9 @@ int main()
 	//Lector de mapa.
 
 	//Inicialización de recursos.
-	inicializar_recursos(archivo, bosque, pedreria);
+	inicializar_recursos(archivo, bosque, pedreria ,&contador_arboles, &contador_rocas); 
 	//Inicialización de recursos.
-
+	printf("%d|%d\n", contador_arboles, contador_rocas);
 	//Ejecución del juego.
 	while (ejecutandose)
 	{
@@ -237,20 +256,28 @@ int main()
 			//Dibujo objetos.
 
 			time_t tiempo_actual_enemigo = time(NULL);
-			if (tiempo_actual_enemigo - tiempo_aparicion_enemigos >= 2)
+			if (tiempo_actual_enemigo - tiempo_aparicion_enemigos >= 4)
 			{
 				cantidad_enemigos_actuales = inicializar_enemigos(archivo, goblin1, cantidad_enemigos_actuales);
 				tiempo_aparicion_enemigos = tiempo_actual_enemigo;
 			}
 			dibujar_enemigos(archivo, goblin1);
+
 			if (ALLEGRO_EVENT_TIMER == juego.type)
 			{
 				velocidad = (velocidad + 1) % 60;
 				if (velocidad == 0)
 				{
-					for (i = 0; i < cant_enemigos; i++)
+					for (i = 0; i < cantidad_enemigos_actuales; i++)
 					{
-						goblin1[i].y -= 1;
+						if (archivo[goblin1[i].y / 40][goblin1[i].x / 40] != 'n')
+						{
+							goblin1[i].y -= 20;
+						}
+						else if(archivo[goblin1[i].y / 40][goblin1[i].x / 40] == 'b')
+						{
+							archivo[goblin1[i].y / 40][goblin1[i].x / 40] = 't';
+						}
 					}
 				}
 			}
@@ -288,7 +315,7 @@ int main()
 		//Llamada función teclado_input.
 		else if (juego.type == ALLEGRO_EVENT_KEY_DOWN)
 		{
-			proceso_teclado_input(juego, archivo);
+			proceso_teclado_input(juego, archivo, torres, &contador_torres);
 		}
 		//Llamada función teclado_input.
 
@@ -316,7 +343,11 @@ int main()
 	al_destroy_bitmap(nucleo);
 	al_destroy_bitmap(nucleo_borde);
 	al_destroy_bitmap(torre_arqueros);
+	al_destroy_bitmap(torre_arqueros2);
+	al_destroy_bitmap(torre_arqueros3);
 	al_destroy_bitmap(torre_magos);
+	al_destroy_bitmap(torre_magos2);
+	al_destroy_bitmap(torre_magos3);
 	al_destroy_bitmap(goblin);
 	al_destroy_timer(temporizador);
 	al_destroy_event_queue(eventos);
@@ -331,13 +362,13 @@ int main()
 //Función principal.
 
 //Función para leer el mapa.
-void lector_mapa(char archivo[y_arreglo][x_arreglo])
+void lector_mapa(char archivo[Y_ARREGLO][X_ARREGLO])
 {
 	int x_mapa, y_mapa;
 
-	for (y_mapa = 0; y_mapa < y_arreglo; y_mapa++)
+	for (y_mapa = 0; y_mapa < Y_ARREGLO; y_mapa++)
 	{
-		for (x_mapa = 0; x_mapa < x_arreglo; x_mapa++)
+		for (x_mapa = 0; x_mapa < X_ARREGLO; x_mapa++)
 		{
 			archivo[y_mapa][x_mapa] = al_fgetc(mapa);
 		}
@@ -347,29 +378,29 @@ void lector_mapa(char archivo[y_arreglo][x_arreglo])
 //Función para leer el mapa.
 
 //Función para inicializar recursos.
-void inicializar_recursos(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso], recurso pedreria[tam_recurso])
+void inicializar_recursos(char archivo[Y_ARREGLO][X_ARREGLO], recurso bosque[TAM_RECURSO], recurso pedreria[TAM_RECURSO], int *contador_arboles, int *contador_rocas)
 {
 	int y_mapa, x_mapa;
-	int contador_arboles = 0;
-	int contador_rocas = 0;
+	//int contador_arboles = 0;
+	//int contador_rocas = 0;
 
-	for (y_mapa = 0; y_mapa < y_arreglo; y_mapa++)
+	for (y_mapa = 0; y_mapa < Y_ARREGLO; y_mapa++)
 	{
-		for (x_mapa = 0; x_mapa < x_arreglo; x_mapa++)
+		for (x_mapa = 0; x_mapa < X_ARREGLO; x_mapa++)
 		{
 			if (archivo[y_mapa][x_mapa] == 'a')
 			{
-				bosque[contador_arboles].y = y_mapa;
-				bosque[contador_arboles].x = x_mapa;
-				bosque[contador_arboles].cantidad = 30;
-				contador_arboles++;
+				bosque[*contador_arboles].y = y_mapa;
+				bosque[*contador_arboles].x = x_mapa;
+				bosque[*contador_arboles].cantidad = 30;
+				(*contador_arboles)++;
 			}
 			if (archivo[y_mapa][x_mapa] == 'r')
 			{
-				pedreria[contador_rocas].y = y_mapa;
-				pedreria[contador_rocas].x = x_mapa;
-				pedreria[contador_rocas].cantidad = 20;
-				contador_rocas++;
+				pedreria[*contador_rocas].y = y_mapa;
+				pedreria[*contador_rocas].x = x_mapa;
+				pedreria[*contador_rocas].cantidad = 20;
+				(*contador_rocas)++;
 			}
 		}
 	}
@@ -401,7 +432,7 @@ void colision_bordes()
 //Función encargada de la colision con los bordes.
 
 //Colisión con objetos.
-void colision_objetos(char archivo[y_arreglo][x_arreglo])
+void colision_objetos(char archivo[Y_ARREGLO][X_ARREGLO])
 {
 	int x_act, y_act;
 	int x_sig, y_sig;
@@ -462,13 +493,13 @@ void colision_objetos(char archivo[y_arreglo][x_arreglo])
 //Colisión con objetos.
 
 //Función para dibujar objetos.
-void dibujar_objetos(char archivo[y_arreglo][x_arreglo], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde, ALLEGRO_BITMAP* torre_arqueros, ALLEGRO_BITMAP* torre_magos, ALLEGRO_BITMAP* goblin)
+void dibujar_objetos(char archivo[Y_ARREGLO][X_ARREGLO], ALLEGRO_BITMAP* muro, ALLEGRO_BITMAP* camino, ALLEGRO_BITMAP* cespedycamino, ALLEGRO_BITMAP* cespedycamino2, ALLEGRO_BITMAP* cesped, ALLEGRO_BITMAP* arbol, ALLEGRO_BITMAP* roca, ALLEGRO_BITMAP* nucleo, ALLEGRO_BITMAP* nucleo_borde, ALLEGRO_BITMAP* torre_arqueros, ALLEGRO_BITMAP* torre_magos, ALLEGRO_BITMAP* goblin)
 {
 	int x_mapa, y_mapa;
 
-	for (y_mapa = 0; y_mapa < y_arreglo; y_mapa++)
+	for (y_mapa = 0; y_mapa < Y_ARREGLO; y_mapa++)
 	{
-		for (x_mapa = 0; x_mapa < x_arreglo; x_mapa++)
+		for (x_mapa = 0; x_mapa < X_ARREGLO; x_mapa++)
 		{
 			if (archivo[y_mapa][x_mapa] == 'm')
 			{
@@ -594,7 +625,7 @@ void dibujar_textos(ALLEGRO_FONT* fuente_posicion, ALLEGRO_FONT* fuente_piedra, 
 //Función para dibujar textos.
 
 //Función para construir torre de arqueros.
-void construir_torre_arqueros(char archivo[y_arreglo][x_arreglo])
+void construir_torre_arqueros(char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int *contador_torres)
 {
 	int x_mapa, y_mapa;
 
@@ -606,12 +637,16 @@ void construir_torre_arqueros(char archivo[y_arreglo][x_arreglo])
 		archivo[y_mapa][x_mapa] = 'h';
 		contador_madera -= 30;
 		contador_piedra -= 5;
+		torres[*contador_torres].x = x_mapa;
+		torres[*contador_torres].y = y_mapa;
+		torres[*contador_torres].activado = 1;
+		(*contador_torres)++;
 	}
 }
 //Función para construir torre de arqueros.
 
 //Función para construir torre de magos.
-void construir_torre_magos(char archivo[y_arreglo][x_arreglo])
+void construir_torre_magos(char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int *contador_torres)
 {
 	int x_mapa, y_mapa;
 
@@ -623,16 +658,20 @@ void construir_torre_magos(char archivo[y_arreglo][x_arreglo])
 		archivo[y_mapa][x_mapa] = 'j';
 		contador_madera -= 5;
 		contador_piedra -= 30;
+		torres[*contador_torres].x = x_mapa;
+		torres[*contador_torres].y = y_mapa;
+		torres[*contador_torres].activado = 1;
+		(*contador_torres)++;
 	}
 }
 //Función para construir torre de magos.
 
 //Función para buscar recursos.
-int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[tam_recurso])
+int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[TAM_RECURSO])
 {
 	int posicion = 0;
 
-	for (posicion = 0; posicion <= tam_recurso; posicion++)
+	for (posicion = 0; posicion <= TAM_RECURSO; posicion++)
 	{
 		if (tipo_recurso[posicion].x == x_mapa && tipo_recurso[posicion].y == y_mapa)
 		{
@@ -644,7 +683,7 @@ int buscar_recurso(int x_mapa, int y_mapa, recurso tipo_recurso[tam_recurso])
 //Función para buscar recursos.
 
 //Recolector y contador piedra.
-void recolectar_piedra(char archivo[y_arreglo][x_arreglo], recurso pedreria[tam_recurso])
+void recolectar_piedra(char archivo[Y_ARREGLO][X_ARREGLO], recurso pedreria[TAM_RECURSO])
 {
 	int x_mapa, y_mapa;
 	int indice;
@@ -720,7 +759,7 @@ void recolectar_piedra(char archivo[y_arreglo][x_arreglo], recurso pedreria[tam_
 //Recolector y contador piedra.
 
 //Recolector y contador madera.
-void recolectar_madera(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_recurso])
+void recolectar_madera(char archivo[Y_ARREGLO][X_ARREGLO], recurso bosque[TAM_RECURSO])
 {
 	int x_mapa, y_mapa;
 	int indice;
@@ -796,7 +835,7 @@ void recolectar_madera(char archivo[y_arreglo][x_arreglo], recurso bosque[tam_re
 //Recolector y contador madera.
 
 //Función encargada del teclado cuando se presiona una tecla.
-void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[y_arreglo][x_arreglo])
+void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[Y_ARREGLO][X_ARREGLO], edificio torres[MAX_TORRES], int *contador_torres)
 {
 	switch (juego.keyboard.keycode)
 	{
@@ -810,9 +849,9 @@ void proceso_teclado_input(ALLEGRO_EVENT juego, char archivo[y_arreglo][x_arregl
 		break;
 	case ALLEGRO_KEY_Q: recolectando = true;
 		break;
-	case ALLEGRO_KEY_W: construir_torre_arqueros(archivo);
+	case ALLEGRO_KEY_W: construir_torre_arqueros(archivo, torres, contador_torres);
 		break;
-	case ALLEGRO_KEY_E: construir_torre_magos(archivo);
+	case ALLEGRO_KEY_E: construir_torre_magos(archivo, torres, contador_torres);
 		break;
 	case ALLEGRO_KEY_ESCAPE: ejecutandose = false;
 		break;
@@ -840,18 +879,22 @@ void proceso_teclado_output(ALLEGRO_EVENT juego)
 //Función encargada de teclado cuando se deja de pulsar una tecla.
 
 //Función para inicializar enemigos.
-int inicializar_enemigos(char archivo[y_arreglo][x_arreglo], enemigo goblin1[cant_enemigos], int cantidad_enemigos_actuales)
+int inicializar_enemigos(char archivo[Y_ARREGLO][X_ARREGLO], enemigo goblin1[CANT_ENEMIGOS], int cantidad_enemigos_actuales)
 {
 	int y_mapa, x_mapa;
 
-	for (y_mapa = 0; y_mapa < y_arreglo; y_mapa++)
+	for (y_mapa = 0; y_mapa < Y_ARREGLO; y_mapa++)
 	{
-		for (x_mapa = 0; x_mapa < x_arreglo; x_mapa++)
+		for (x_mapa = 0; x_mapa < X_ARREGLO; x_mapa++)
 		{
 			if (archivo[y_mapa][x_mapa] == 'x')
 			{
-				goblin1[cantidad_enemigos_actuales].y = y_mapa;
-				goblin1[cantidad_enemigos_actuales].x = x_mapa;
+				if (cantidad_enemigos_actuales == CANT_ENEMIGOS) //Cuando dibuja la cantidad máxima de enemigos, no dibuja más.
+				{
+					return cantidad_enemigos_actuales;
+				}
+				goblin1[cantidad_enemigos_actuales].y = y_mapa * 40;
+				goblin1[cantidad_enemigos_actuales].x = x_mapa * 40;
 				goblin1[cantidad_enemigos_actuales].vida = 150;
 				goblin1[cantidad_enemigos_actuales].velocidad = 1;
 				cantidad_enemigos_actuales++;
@@ -863,13 +906,13 @@ int inicializar_enemigos(char archivo[y_arreglo][x_arreglo], enemigo goblin1[can
 //Función para inicializar enemigos.
 
 //Dibujar enemigos.
-void dibujar_enemigos(char archivo[y_arreglo][x_arreglo], enemigo goblin1[cant_enemigos])
+void dibujar_enemigos(char archivo[Y_ARREGLO][X_ARREGLO], enemigo goblin1[CANT_ENEMIGOS])
 {
 	int posicion;
 
-	for (posicion = 0; posicion <= cant_enemigos; posicion++)
+	for (posicion = 0; posicion <= CANT_ENEMIGOS; posicion++)
 	{
-		al_draw_bitmap(goblin, goblin1[posicion].x * 40, (goblin1[posicion].y * 40), 0);
+		al_draw_bitmap(goblin, goblin1[posicion].x, goblin1[posicion].y, 0);
 	}
 }
 //Dibujar enemigos.
